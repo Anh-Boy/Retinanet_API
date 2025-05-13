@@ -1,0 +1,12 @@
+__pycache__/
+*.pyc
+*.pyo
+*.h5
+*.pb
+*.weights
+*.onnx
+.env
+.DS_Store
+.idea/
+.vscode/
+rendered_outputs/

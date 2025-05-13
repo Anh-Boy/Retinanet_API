@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Nhận diện Biển báo Giao thông</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-100 min-h-screen flex items-center justify-center px-4">
+
+  <div class="bg-white shadow-lg rounded-lg p-6 w-full max-w-xl space-y-6">
+    <h1 class="text-2xl font-bold text-center text-blue-600">Nhận diện Biển báo Giao thông</h1>
+
+    <div class="flex flex-col space-y-4 items-center">
+      <input type="file" id="fileInput" accept="image/*" class="w-full text-sm file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-white file:bg-blue-500 hover:file:bg-blue-600"/>
+      <button onclick="sendImage()" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 rounded-lg">
+        Nhận diện
+      </button>
+    </div>
+
+    <div id="loading" class="text-center text-blue-600 font-semibold hidden">⏳ Đang xử lý...</div>
+
+    <div id="preview" class="w-full"></div>
+
+    <div id="result" class="bg-gray-50 p-4 rounded-lg shadow hidden">
+      <h2 class="text-lg font-semibold mb-2 text-gray-700">📋 Kết quả:</h2>
+      <ul id="resultList" class="list-disc list-inside text-sm text-gray-800 space-y-1"></ul>
+    </div>
+  </div>
+
+  <script>
+    async function sendImage() {
+      const fileInput = document.getElementById("fileInput");
+      const preview = document.getElementById("preview");
+      const resultDiv = document.getElementById("result");
+      const resultList = document.getElementById("resultList");
+      const loading = document.getElementById("loading");
+
+      if (!fileInput.files.length) {
+        alert("Vui lòng chọn ảnh.");
+        return;
+      }
+
+      const file = fileInput.files[0];
+      const formData = new FormData();
+      formData.append("file", file);
+
+      preview.innerHTML = '';
+      resultDiv.classList.add("hidden");
+      loading.classList.remove("hidden");
+
+      try {
+        const response = await fetch('http://127.0.0.1:8000/predict', {
+          method: "POST",
+          body: formData,
+        });
+
+        const data = await response.json();
+        loading.classList.add("hidden");
+
+        if (data.message === "Success") {
+          // Ảnh kết quả
+          const img = document.createElement("img");
+          img.src = "data:image/jpeg;base64," + data.image_base64;
+          img.className = "w-full rounded border border-gray-300";
+          preview.appendChild(img);
+
+          // Danh sách kết quả
+          resultList.innerHTML = "";
+          data.results.forEach(r => {
+            const li = document.createElement("li");
+            li.innerHTML = `<strong>${r.label}</strong> – độ tin cậy: <span class="text-blue-600 font-medium">${r.confidence}</span>`;
+            resultList.appendChild(li);
+          });
+
+          resultDiv.classList.remove("hidden");
+        } else {
+          alert("Không thể nhận diện ảnh.");
+        }
+      } catch (error) {
+        loading.classList.add("hidden");
+        alert("Lỗi khi kết nối tới API.");
+        console.error(error);
+      }
+    }
+  </script>
+
+</body>
+</html>
